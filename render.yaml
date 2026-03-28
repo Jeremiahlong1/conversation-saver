@@ -8,4 +8,4 @@ services:
       - key: PYTHON_VERSION
         value: "3.11.0"
       - key: ANTHROPIC_API_KEY
-        sync: false   # you set this manually in Render dashboard
+        sync: false
