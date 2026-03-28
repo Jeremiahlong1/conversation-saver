@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Conversation Saver — Resume Any Chat</title>
+<meta name="description" content="Hit Claude's chat limit? Save your full conversation and generate a context primer to resume instantly in a new chat. Free.">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #09100a;
+  --surface:  #0e160f;
+  --surface2: #121a13;
+  --border:   #1a251b;
+  --border2:  #223024;
+  --accent:   #3ddc84;
+  --accent2:  #2bc46e;
+  --adim:     #112a1a;
+  --asoft:    #1e4029;
+  --text:     #b8ccba;
+  --textmid:  #6b8f70;
+  --textdim:  #3a5040;
+  --bright:   #e0ede2;
+  --human:    #3ddc84;
+  --ai:       #5fa872;
+  --err:      #e05c5c;
+  --warn:     #d4924a;
+  --r:        8px;
+}
+
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── HEADER ─────────────────────────────────────────────── */
+header {
+  height: 54px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.logo-mark {
+  width: 28px; height: 28px;
+  border: 1.5px solid var(--accent);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 600; color: var(--accent);
+  letter-spacing: -.5px;
+}
+
+.logo-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12.5px; font-weight: 500;
+  color: var(--bright); letter-spacing: .3px;
+}
+
+.logo-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--textdim);
+  margin-left: 4px;
+}
+
+.header-right {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 10px;
+}
+
+.status-pill {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  background: var(--adim); color: var(--accent);
+  padding: 3px 10px; border-radius: 20px;
+  border: 1px solid var(--asoft);
+}
+
+/* ── LAYOUT ─────────────────────────────────────────────── */
+main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 290px 1fr;
+  overflow: hidden;
+  height: calc(100vh - 54px);
+}
+
+/* ── SIDEBAR ─────────────────────────────────────────────── */
+.sidebar {
+  border-right: 1px solid var(--border);
+  background: var(--surface);
+  display: flex; flex-direction: column;
+  overflow-y: auto;
+}
+
+.sblock {
+  padding: 16px 15px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sblock:last-child { border-bottom: none; flex: 1; }
+
+.slabel {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.5px; font-weight: 500;
+  color: var(--textdim); letter-spacing: 1.2px;
+  text-transform: uppercase;
+  display: block; margin-bottom: 7px;
+}
+
+input[type=text], textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  color: var(--bright);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  padding: 9px 11px;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+input[type=text]:focus, textarea:focus {
+  border-color: var(--asoft);
+  box-shadow: 0 0 0 2px var(--adim);
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--textdim); font-size: 11px;
+}
+
+textarea {
+  resize: vertical; min-height: 100px;
+  line-height: 1.5; font-size: 11px;
+}
+
+.btn {
+  display: block; width: 100%;
+  padding: 10px 14px;
+  border: none; border-radius: var(--r);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px; font-weight: 600;
+  letter-spacing: .3px;
+  cursor: pointer;
+  transition: all .15s;
+  text-align: center;
+}
+
+.btn-primary {
+  background: var(--accent); color: #071209;
+}
+.btn-primary:hover { background: var(--accent2); }
+.btn-primary:active { transform: scale(.99); }
+.btn-primary:disabled { opacity: .3; cursor: not-allowed; transform: none; }
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--textmid);
+}
+.btn-ghost:hover { border-color: var(--asoft); color: var(--bright); }
+.btn-ghost:disabled { opacity: .3; cursor: not-allowed; }
+
+.btn-accent-ghost {
+  background: var(--adim);
+  border: 1px solid var(--asoft);
+  color: var(--accent);
+}
+.btn-accent-ghost:hover { background: var(--asoft); }
+.btn-accent-ghost:disabled { opacity: .3; cursor: not-allowed; }
+
+.btn-sm { padding: 5px 11px; font-size: 10.5px; width: auto; border-radius: 6px; }
+
+/* Status */
+.statusbox {
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  padding: 9px 11px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  color: var(--textdim);
+  min-height: 36px;
+  display: flex; align-items: flex-start; gap: 8px;
+  line-height: 1.6;
+}
+.statusbox.ok   { color: var(--accent); border-color: var(--asoft); background: var(--adim); }
+.statusbox.err  { color: var(--err);    border-color: #3a1515; }
+.statusbox.warn { color: var(--warn); }
+.dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: currentColor; flex-shrink: 0; margin-top: 5px;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.15} }
+
+/* Stats */
+.statsbox {
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  padding: 11px;
+  display: none; flex-direction: column; gap: 5px;
+}
+.statsbox.on { display: flex; }
+.srow {
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: 'IBM Plex Mono', monospace; font-size: 10.5px;
+}
+.srow .k { color: var(--textdim); }
+.srow .v { color: var(--bright); font-weight: 500; }
+.srow .v.hi { color: var(--accent); }
+.srow .v.dim { color: var(--textmid); font-size: 9.5px; }
+
+/* Download row */
+.dlrow { display: flex; gap: 6px; }
+.dlrow .btn { flex: 1; }
+
+/* Fallback note */
+.fnote {
+  font-size: 11.5px; color: var(--textdim);
+  line-height: 1.65; margin-bottom: 9px;
+}
+.fnote kbd {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  padding: 1px 5px; border-radius: 3px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+}
+
+/* ── CONTENT ─────────────────────────────────────────────── */
+.content {
+  display: flex; flex-direction: column;
+  overflow: hidden; background: var(--bg);
+}
+
+/* Tabs */
+.tabbar {
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  display: flex; align-items: center;
+  padding: 0 20px; height: 44px; flex-shrink: 0;
+}
+
+.tab {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px; letter-spacing: .3px;
+  color: var(--textdim);
+  padding: 0 14px; height: 44px;
+  display: flex; align-items: center; gap: 7px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color .15s, border-color .15s;
+}
+.tab:hover { color: var(--textmid); }
+.tab.on { color: var(--accent); border-bottom-color: var(--accent); }
+
+.tbadge {
+  background: var(--adim); color: var(--accent);
+  font-size: 9px; font-weight: 600;
+  padding: 1px 6px; border-radius: 10px;
+  display: none; min-width: 16px; text-align: center;
+}
+.tbadge.on { display: inline-block; }
+
+.tabright { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+
+.panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+.panel.on { display: flex; }
+
+/* ── TRANSCRIPT PANEL ─────────────────────────────────────── */
+.tscroll { flex: 1; overflow-y: auto; padding: 20px 24px; }
+
+.empty {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  height: 100%; gap: 16px; opacity: .2;
+  pointer-events: none;
+}
+.empty p {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px; color: var(--textdim);
+  text-align: center; line-height: 1.7;
+}
+
+.message {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 14px; padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  animation: fu .2s ease;
+}
+.message:last-child { border-bottom: none; }
+@keyframes fu { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
+
+.mmeta { text-align: right; padding-top: 1px; }
+.mrole {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.5px; font-weight: 600;
+  letter-spacing: .8px; text-transform: uppercase;
+}
+.mrole.human { color: var(--human); }
+.mrole.assistant { color: var(--ai); }
+.mturn {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8.5px; color: var(--textdim); margin-top: 3px;
+}
+
+.mtext {
+  font-size: 13.5px; line-height: 1.72;
+  color: var(--text); white-space: pre-wrap; word-break: break-word;
+}
+.mtext code {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11.5px;
+  background: #0e180e; border: 1px solid var(--border2);
+  padding: 1px 5px; border-radius: 3px; color: var(--accent);
+}
+.mtext pre {
+  background: #0b130c; border: 1px solid var(--border2);
+  border-radius: 6px; padding: 12px; overflow-x: auto; margin: 7px 0;
+}
+.mtext pre code {
+  background: none; border: none; padding: 0;
+  color: #a8c4aa; font-size: 12px;
+}
+
+/* ── PRIMER PANEL ─────────────────────────────────────────── */
+.pscroll { flex: 1; overflow-y: auto; padding: 24px; }
+
+.primer-empty {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  height: 100%; gap: 16px;
+  text-align: center;
+}
+
+.primer-empty-icon {
+  width: 56px; height: 56px;
+  border-radius: 14px;
+  background: var(--adim);
+  border: 1px solid var(--asoft);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+}
+
+.primer-empty h3 {
+  font-size: 15px; font-weight: 600; color: var(--bright);
+}
+
+.primer-empty p {
+  font-size: 13px; color: var(--textmid);
+  max-width: 340px; line-height: 1.65;
+}
+
+.primer-generating {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  height: 100%; gap: 16px;
+}
+
+.primer-generating p {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; color: var(--accent);
+}
+
+.spinner {
+  width: 28px; height: 28px;
+  border: 2px solid var(--adim);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.primer-box {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  padding: 20px 22px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.primer-box strong { color: var(--bright); }
+.primer-box h2, .primer-box h3 { color: var(--accent); font-size: 13px; margin: 12px 0 6px; }
+.primer-box hr { border: none; border-top: 1px solid var(--border2); margin: 14px 0; }
+.primer-box em { color: var(--textmid); }
+.primer-box ul, .primer-box ol { padding-left: 18px; }
+.primer-box li { margin-bottom: 4px; }
+
+.primer-actions {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+
+.copy-confirm {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--accent);
+  display: none; align-items: center; gap: 6px; margin-top: 10px;
+}
+.copy-confirm.on { display: flex; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">CS</div>
+  <span class="logo-name">Conversation Saver</span>
+  <span class="logo-tag">for Claude</span>
+  <div class="header-right">
+    <span class="status-pill" id="serverPill">checking…</span>
+  </div>
+</header>
+
+<main>
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+
+    <div class="sblock">
+      <label class="slabel">Share URL</label>
+      <input type="text" id="urlInput"
+        placeholder="https://claude.ai/share/…"
+        style="margin-bottom:10px"
+        onkeydown="if(event.key==='Enter')doFetch()">
+      <button class="btn btn-primary" id="fetchBtn" onclick="doFetch()">
+        Fetch Conversation
+      </button>
+    </div>
+
+    <div class="sblock">
+      <div class="statusbox" id="statusEl">
+        <span>Paste a public Claude share link above</span>
+      </div>
+    </div>
+
+    <div class="sblock">
+      <div class="statsbox" id="statsEl">
+        <div class="srow"><span class="k">Messages</span><span class="v" id="sMsgs">—</span></div>
+        <div class="srow"><span class="k">Your turns</span><span class="v" id="sTurns">—</span></div>
+        <div class="srow"><span class="k">Characters</span><span class="v" id="sChars">—</span></div>
+        <div class="srow"><span class="k">Parsed via</span><span class="v dim" id="sSource">—</span></div>
+      </div>
+    </div>
+
+    <div class="sblock">
+      <label class="slabel" style="margin-bottom:8px">Download Transcript</label>
+      <div class="dlrow">
+        <button class="btn btn-ghost btn-sm" id="dlTxt" disabled onclick="dlFmt('txt')">.txt</button>
+        <button class="btn btn-ghost btn-sm" id="dlMd"  disabled onclick="dlFmt('md')">.md</button>
+        <button class="btn btn-ghost btn-sm" id="cpBtn" disabled onclick="cpTranscript()">copy</button>
+      </div>
+    </div>
+
+    <div class="sblock" style="flex:1">
+      <label class="slabel">HTML Fallback</label>
+      <p class="fnote">
+        If fetch fails, open the share link in your browser,
+        save the page (<kbd>Ctrl+S</kbd> → <kbd>Webpage, Complete</kbd>),
+        then paste the full HTML below.
+      </p>
+      <textarea id="rawHtml" placeholder="Paste full page HTML here…"></textarea>
+      <button class="btn btn-ghost" onclick="doParse()" style="margin-top:8px">
+        Parse HTML
+      </button>
+    </div>
+
+  </aside>
+
+  <!-- ── CONTENT ── -->
+  <div class="content">
+    <div class="tabbar">
+      <div class="tab on" id="tTranscript" onclick="sw('Transcript')">
+        Transcript
+        <span class="tbadge" id="bTranscript"></span>
+      </div>
+      <div class="tab" id="tPrimer" onclick="sw('Primer')">
+        Context Primer
+        <span class="tbadge" id="bPrimer"></span>
+      </div>
+      <div class="tabright">
+        <button class="btn btn-ghost btn-sm" onclick="clearAll()">Clear</button>
+      </div>
+    </div>
+
+    <!-- Transcript -->
+    <div class="panel on" id="pTranscript">
+      <div class="tscroll" id="transcriptEl">
+        <div class="empty">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <rect x="8" y="6" width="32" height="36" rx="4" stroke="#3ddc84" stroke-width="1.5" fill="none"/>
+            <line x1="14" y1="15" x2="34" y2="15" stroke="#3ddc84" stroke-width="1.5"/>
+            <line x1="14" y1="22" x2="30" y2="22" stroke="#3ddc84" stroke-width="1.5"/>
+            <line x1="14" y1="29" x2="24" y2="29" stroke="#3ddc84" stroke-width="1.5"/>
+          </svg>
+          <p>Paste a Claude share link<br>and click Fetch.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Primer -->
+    <div class="panel" id="pPrimer">
+      <div class="pscroll">
+        <div class="primer-empty" id="primerEmpty">
+          <div class="primer-empty-icon">✦</div>
+          <h3>Context Primer</h3>
+          <p>
+            Fetch a conversation first, then generate a context primer —
+            a structured summary you paste at the start of a new Claude chat
+            to pick up exactly where you left off.
+          </p>
+          <button class="btn btn-accent-ghost" id="genBtnTop" disabled onclick="generatePrimer()" style="width:auto;padding:10px 24px;margin-top:4px">
+            Generate Primer
+          </button>
+        </div>
+
+        <div class="primer-generating" id="primerGenerating" style="display:none">
+          <div class="spinner"></div>
+          <p>Analyzing conversation…</p>
+        </div>
+
+        <div id="primerResult" style="display:none">
+          <div class="primer-box" id="primerBox"></div>
+          <div class="primer-actions">
+            <button class="btn btn-accent-ghost btn-sm" onclick="cpPrimer()">Copy Primer</button>
+            <button class="btn btn-ghost btn-sm" onclick="dlPrimer()">Download .txt</button>
+            <button class="btn btn-ghost btn-sm" onclick="generatePrimer()">Regenerate</button>
+          </div>
+          <div class="copy-confirm" id="copyConfirm">
+            ✓ Copied — paste at the top of your new Claude chat
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let messages       = [];
+let transcriptTxt  = '';
+let transcriptMd   = '';
+let primerText     = '';
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+(async function checkHealth() {
+  try {
+    const r = await fetch('/health');
+    if (r.ok) setPill('server ready', true);
+    else setPill('server error', false);
+  } catch {
+    setPill('offline', false);
+  }
+})();
+
+function setPill(text, ok) {
+  const el = document.getElementById('serverPill');
+  el.textContent = text;
+  if (!ok) {
+    el.style.background = '#2a1010';
+    el.style.color = '#e05c5c';
+    el.style.borderColor = '#4a1a1a';
+  }
+}
+
+// ── Status ─────────────────────────────────────────────────────────────────
+function setStatus(msg, type = '') {
+  const el = document.getElementById('statusEl');
+  el.className = 'statusbox' + (type ? ' ' + type : '');
+  el.innerHTML = type === 'ok'
+    ? `<div class="dot"></div><span>${msg}</span>`
+    : `<span>${msg}</span>`;
+}
+
+// ── Tabs ───────────────────────────────────────────────────────────────────
+function sw(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  document.getElementById('t' + name).classList.add('on');
+  document.getElementById('p' + name).classList.add('on');
+}
+
+function setBadge(id, val) {
+  const el = document.getElementById(id);
+  el.textContent = val;
+  el.classList.add('on');
+}
+
+// ── Fetch ──────────────────────────────────────────────────────────────────
+async function doFetch() {
+  const url = document.getElementById('urlInput').value.trim();
+  if (!url) { setStatus('Enter a URL first', 'err'); return; }
+
+  document.getElementById('fetchBtn').disabled = true;
+  setStatus('Fetching from claude.ai…', 'ok');
+
+  try {
+    const resp = await fetch('/api/fetch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) { setStatus(data.error || 'Server error', 'err'); return; }
+    handleResult(data);
+  } catch (e) {
+    setStatus('Could not reach server', 'err');
+  } finally {
+    document.getElementById('fetchBtn').disabled = false;
+  }
+}
+
+async function doParse() {
+  const html = document.getElementById('rawHtml').value.trim();
+  if (!html) { setStatus('Paste HTML first', 'err'); return; }
+
+  setStatus('Parsing HTML…', 'ok');
+
+  try {
+    const resp = await fetch('/api/parse', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ html }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) { setStatus(data.error || 'Parse error', 'err'); return; }
+    handleResult(data);
+  } catch (e) {
+    setStatus('Server error during parse', 'err');
+  }
+}
+
+// ── Handle result ──────────────────────────────────────────────────────────
+function handleResult(data) {
+  messages      = data.messages || [];
+  transcriptTxt = data.transcript_txt || '';
+  transcriptMd  = data.transcript_md  || '';
+  primerText    = '';
+
+  renderTranscript();
+  updateStats(data.stats, data.source);
+  enableBtns();
+  resetPrimer();
+
+  const count = messages.length;
+  setStatus(`${count} messages loaded`, 'ok');
+  setTimeout(() => setStatus(`${count} messages ready`), 2500);
+}
+
+// ── Transcript ─────────────────────────────────────────────────────────────
+function renderTranscript() {
+  const el = document.getElementById('transcriptEl');
+  setBadge('bTranscript', messages.length);
+
+  el.innerHTML = messages.map((msg, i) => `
+    <div class="message">
+      <div class="mmeta">
+        <div class="mrole ${msg.role}">${msg.role === 'human' ? 'You' : 'Claude'}</div>
+        <div class="mturn">#${i + 1}</div>
+      </div>
+      <div class="mtext">${fmt(msg.content)}</div>
+    </div>
+  `).join('');
+}
+
+function fmt(t) {
+  t = t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  t = t.replace(/```[\w]*\n?([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+  t = t.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+  return t;
+}
+
+// ── Context Primer ─────────────────────────────────────────────────────────
+function resetPrimer() {
+  document.getElementById('primerEmpty').style.display      = 'flex';
+  document.getElementById('primerGenerating').style.display = 'none';
+  document.getElementById('primerResult').style.display     = 'none';
+  document.getElementById('genBtnTop').disabled = messages.length === 0;
+  document.getElementById('bPrimer').classList.remove('on');
+}
+
+async function generatePrimer() {
+  if (!messages.length) return;
+
+  sw('Primer');
+  document.getElementById('primerEmpty').style.display      = 'none';
+  document.getElementById('primerGenerating').style.display = 'flex';
+  document.getElementById('primerResult').style.display     = 'none';
+
+  try {
+    const resp = await fetch('/api/primer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages }),
+    });
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      document.getElementById('primerEmpty').style.display      = 'flex';
+      document.getElementById('primerGenerating').style.display = 'none';
+      setStatus(data.error || 'Primer generation failed', 'err');
+      return;
+    }
+
+    primerText = data.primer || '';
+    document.getElementById('primerBox').innerHTML = renderPrimerMarkdown(primerText);
+    document.getElementById('primerGenerating').style.display = 'none';
+    document.getElementById('primerResult').style.display     = 'block';
+    setBadge('bPrimer', '✓');
+
+  } catch (e) {
+    document.getElementById('primerEmpty').style.display      = 'flex';
+    document.getElementById('primerGenerating').style.display = 'none';
+    setStatus('Server error generating primer', 'err');
+  }
+}
+
+function renderPrimerMarkdown(text) {
+  // Minimal markdown renderer for the primer output
+  let html = text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^---$/gm, '<hr>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g, s => `<ul>${s}</ul>`)
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>');
+  return `<p>${html}</p>`;
+}
+
+// ── Downloads ──────────────────────────────────────────────────────────────
+function dlFmt(fmt) {
+  if (!transcriptTxt) return;
+  const content = fmt === 'txt' ? transcriptTxt : transcriptMd;
+  triggerDownload(content, `claude_transcript.${fmt}`, 'text/plain');
+}
+
+function dlPrimer() {
+  if (!primerText) return;
+  triggerDownload(primerText, 'context_primer.txt', 'text/plain');
+}
+
+function triggerDownload(content, filename, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type }));
+  a.download = filename;
+  a.click();
+}
+
+function cpTranscript() {
+  if (!transcriptTxt) return;
+  navigator.clipboard.writeText(transcriptTxt).then(() => {
+    const b = document.getElementById('cpBtn');
+    b.textContent = 'copied!';
+    setTimeout(() => b.textContent = 'copy', 1800);
+  });
+}
+
+function cpPrimer() {
+  if (!primerText) return;
+  navigator.clipboard.writeText(primerText).then(() => {
+    const el = document.getElementById('copyConfirm');
+    el.classList.add('on');
+    setTimeout(() => el.classList.remove('on'), 3000);
+  });
+}
+
+// ── Stats ──────────────────────────────────────────────────────────────────
+function updateStats(stats, source) {
+  if (!stats) return;
+  document.getElementById('statsEl').classList.add('on');
+  document.getElementById('sMsgs').textContent   = stats.message_count;
+  document.getElementById('sTurns').textContent  = stats.turn_count;
+  document.getElementById('sChars').textContent  = stats.char_count.toLocaleString();
+  document.getElementById('sSource').textContent = source || '—';
+}
+
+function enableBtns() {
+  ['dlTxt','dlMd','cpBtn'].forEach(id => document.getElementById(id).disabled = false);
+  document.getElementById('genBtnTop').disabled = false;
+}
+
+// ── Clear ──────────────────────────────────────────────────────────────────
+function clearAll() {
+  messages = []; transcriptTxt = ''; transcriptMd = ''; primerText = '';
+
+  document.getElementById('transcriptEl').innerHTML = `
+    <div class="empty">
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+        <rect x="8" y="6" width="32" height="36" rx="4" stroke="#3ddc84" stroke-width="1.5" fill="none"/>
+        <line x1="14" y1="15" x2="34" y2="15" stroke="#3ddc84" stroke-width="1.5"/>
+        <line x1="14" y1="22" x2="30" y2="22" stroke="#3ddc84" stroke-width="1.5"/>
+        <line x1="14" y1="29" x2="24" y2="29" stroke="#3ddc84" stroke-width="1.5"/>
+      </svg>
+      <p>Paste a Claude share link<br>and click Fetch.</p>
+    </div>`;
+
+  document.getElementById('statsEl').classList.remove('on');
+  document.getElementById('urlInput').value  = '';
+  document.getElementById('rawHtml').value   = '';
+  ['dlTxt','dlMd','cpBtn'].forEach(id => document.getElementById(id).disabled = true);
+  ['bTranscript','bPrimer'].forEach(id => {
+    const el = document.getElementById(id);
+    el.textContent = ''; el.classList.remove('on');
+  });
+
+  resetPrimer();
+  setStatus('Paste a public Claude share link above');
+  sw('Transcript');
+}
+</script>
+</body>
+</html>
